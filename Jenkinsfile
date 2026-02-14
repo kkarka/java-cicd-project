@@ -1,7 +1,7 @@
 pipeline {
 agent any
 
-```
+
 environment {
     DOCKER_IMAGE = "kkarka/java-cicd-app:latest"
     SONAR_HOST_URL = "http://host.docker.internal:9000"
@@ -79,7 +79,7 @@ stages {
         }
     }
 }
-```
+
 
 }
 
