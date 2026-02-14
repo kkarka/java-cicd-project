@@ -39,7 +39,7 @@ stages {
 
     stage('Docker Build') {
         steps {
-            sh 'docker build -t $DOCKER_IMAGE .'
+            sh 'docker build -t kkarka/java-cicd-app:${BUILD_NUMBER} .'
         }
     }
 
@@ -52,19 +52,38 @@ stages {
 
                 sh '''
                 echo $PASS | docker login -u $USER --password-stdin
-                docker push $DOCKER_IMAGE
+                docker push kkarka/java-cicd-app:${BUILD_NUMBER}
                 '''
             }
         }
     }
 
     stage('Update Helm Chart') {
-        steps {
-            sh '''
-            sed -i "s|repository:.*|repository: kkarka/java-cicd-app|" helm/values.yaml
-            sed -i "s|tag:.*|tag: latest|" helm/values.yaml
-            '''
+       stage('Update Helm Repo') {
+            steps {
+                sh '''
+                rm -rf helm-repo
+
+                git clone git@github.com:kkarka/springboot-manifests.git helm-repo
+
+                cd helm-repo/helm/springboot-app
+                # Update image repository (optional) 
+                sed -i "s|repository:.*|repository: kkarka/java-cicd-app|" values.yaml
+                
+                sed -i "s|tag:.*|tag: ${BUILD_NUMBER}|" values.yaml
+
+                cd ../../..
+
+                git config user.email "jenkins@local"
+                git config user.name "Jenkins"
+
+                git add values.yaml
+                git commit -m "Update image tag to ${BUILD_NUMBER}"
+                git push
+                '''    
+            }
         }
+
     }
 
     stage('Commit Changes') {
